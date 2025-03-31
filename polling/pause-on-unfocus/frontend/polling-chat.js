@@ -5,7 +5,9 @@ let allChat = [];
 
 const INTERVAL = 3000;
 
+const BACKOFF = 5000;
 let timeToMakeNextRequest = 0;
+let failedTries = 0;
 
 chat.addEventListener("submit", function (e) {
   e.preventDefault();
@@ -40,12 +42,19 @@ async function getNewMsgs() {
   try {
     const res = await fetch("/poll");
     json = await res.json();
+
+    if (res.status >= 400) {
+      throw new Error("request did not succeed: " + res.status);
+    }
+
+    allChat = json.msg;
+    render();
+    failedTries = 0;
   } catch (e) {
     // back off
     console.error("polling error", e);
+    failedTries++;
   }
-  allChat = json.msg;
-  render();
 }
 
 function render() {
@@ -59,7 +68,7 @@ const template = (user, msg) =>
 function rafTimer(time) {
   if (timeToMakeNextRequest <= time) {
     getNewMsgs();
-    timeToMakeNextRequest = time + INTERVAL;
+    timeToMakeNextRequest = time + INTERVAL + failedTries * BACKOFF;
   }
   requestAnimationFrame(rafTimer);
 }
