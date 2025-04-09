@@ -43,15 +43,31 @@ async function getNewMsgs() {
   presence.innerText = '🟢';
 
   let readerResponse;
-  try {
-    readerResponse = await reader.read();
+  let done;
+  do {
+    try {
+      readerResponse = await reader.read();
+    } catch (e) {
+      console.error("reader fail", e);
+      presence.innerText = '🔴';
+      return;
+    }
+
     const chunk = utf8Decoder.decode(readerResponse.value, { stream: true });
-    console.log(chunk);
-  } catch (e) {
-    console.error("reader fail", e);
-    presence.innerText = '🔴';
-    return;
-  }
+    done = readerResponse.done;
+
+    if (chunk) {
+      try {
+        const json = JSON.parse(chunk);
+        allChat = json.msg;
+        render();
+      } catch (e) {
+        console.error("parse error", e);
+      }
+    }
+
+  } while (!done);
+  presence.innerText = '🔴';
 }
 
 function render() {
