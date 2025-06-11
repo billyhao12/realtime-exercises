@@ -16,6 +16,11 @@ socket.on("disconnect", () => {
   presence.innerText = "🔴";
 });
 
+socket.on("msg:get", (data) => {
+  allChat = data.msg;
+  render();
+});
+
 chat.addEventListener("submit", function (e) {
   e.preventDefault();
   postNewMsg(chat.elements.user.value, chat.elements.text.value);
